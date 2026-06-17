@@ -31,6 +31,10 @@ const defaultBusiness = {
 export const useStore = create(
   persist(
     (set, get) => ({
+      // Authentication
+      isAuthenticated: false,
+      setAuthenticated: (val) => set({ isAuthenticated: val }),
+
       // Onboarding
       isOnboarded: false,
       business: defaultBusiness,
@@ -207,6 +211,7 @@ export const useStore = create(
     {
       name: 'suryaquote-storage',
       partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
         isOnboarded: state.isOnboarded,
         business: state.business,
         quotes: state.quotes,

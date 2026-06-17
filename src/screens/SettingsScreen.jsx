@@ -6,9 +6,16 @@ import { STATE_SUBSIDIES } from '../utils/calculator';
 export default function SettingsScreen() {
   const navigate = useNavigate();
   const { 
-    business, updateBusiness, setOnboarded, quotes, events,
+    business, updateBusiness, setOnboarded, setAuthenticated, quotes, events,
     syncCode, setSyncCode, syncQuotes, syncStatus, syncError, lastSynced 
   } = useStore();
+
+  function handleLogout() {
+    if (window.confirm('Log out? Your quotes and settings will be saved on this device.')) {
+      setAuthenticated(false);
+      navigate('/login');
+    }
+  }
   const [saved, setSaved] = useState(false);
   const [localSyncCode, setLocalSyncCode] = useState(syncCode || business.gst || '');
   const states = Object.keys(STATE_SUBSIDIES).sort();
@@ -268,6 +275,22 @@ export default function SettingsScreen() {
           </div>
           <button id="export-csv-btn" className="btn btn--secondary btn--full" onClick={handleExportCSV}>
             📥 Export Usage Log (CSV)
+          </button>
+        </div>
+
+        {/* Log Out */}
+        <div className="card mb-md" style={{ border: '1px solid rgba(255,107,0,0.2)', background: 'rgba(255,107,0,0.03)' }}>
+          <h2 className="section-title mb-sm">🔒 Session</h2>
+          <p className="text-secondary text-sm mb-md">
+            Log out of SuryaQuote. Your quotes and settings remain saved on this device.
+          </p>
+          <button
+            id="logout-btn"
+            className="btn btn--full"
+            onClick={handleLogout}
+            style={{ background: 'transparent', border: '1px solid rgba(255,107,0,0.4)', color: 'var(--orange)' }}
+          >
+            🔓 Log Out
           </button>
         </div>
 
