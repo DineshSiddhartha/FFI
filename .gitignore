@@ -40,4 +40,6 @@ dist-ssr
 *.docx
 *.doc
 *.rtf
+im*.jpg
+
 
