@@ -15,7 +15,7 @@ const statusConfig = {
 export default function QuoteDetailScreen() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getQuote, updateQuote, deleteQuote, business, logEvent, startDraft, syncQuotes } = useStore();
+  const { getQuote, updateQuote, deleteQuote, pushQuotesToCloud, business, logEvent, startDraft, syncQuotes } = useStore();
   const quote = getQuote(id);
 
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -167,7 +167,7 @@ export default function QuoteDetailScreen() {
   function handleDelete() {
     if (window.confirm('Delete this quote? This cannot be undone.')) {
       deleteQuote(id);
-      syncQuotes();
+      pushQuotesToCloud(); // Direct push — avoids merge re-adding the deleted quote
       navigate('/');
     }
   }

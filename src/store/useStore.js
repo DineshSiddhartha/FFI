@@ -59,6 +59,25 @@ export const useStore = create(
         quotes: state.quotes.filter(q => q.id !== id),
       })),
 
+      // Push local quotes directly to cloud (used after deletion to avoid merge re-adding deleted quote)
+      pushQuotesToCloud: async () => {
+        const { quotes, syncCode, business } = get();
+        const rawCode = syncCode || business.gst || 'default_surya_sync';
+        if (!rawCode) return;
+        const safeCode = rawCode.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        const GLOBAL_BUCKET = 'CdU4BDcBDc1Lk2YGZUjGhz';
+        const key = `quotes_${safeCode}`;
+        try {
+          await fetch(`https://kvdb.io/${GLOBAL_BUCKET}/${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quotes),
+          });
+        } catch (err) {
+          console.error('Push after delete failed:', err);
+        }
+      },
+
       // Get quote by id
       getQuote: (id) => get().quotes.find(q => q.id === id),
 
