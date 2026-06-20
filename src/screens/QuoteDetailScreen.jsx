@@ -164,11 +164,11 @@ export default function QuoteDetailScreen() {
     showToast(`Status updated to ${newStatus}`);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (window.confirm('Delete this quote? This cannot be undone.')) {
       deleteQuote(id);
-      pushQuotesToCloud(); // Direct push — avoids merge re-adding the deleted quote
-      navigate('/');
+      await pushQuotesToCloud(); // Wait for cloud write to finish BEFORE navigating
+      navigate('/');             // HomeScreen auto-syncs on mount — must finish push first
     }
   }
 
