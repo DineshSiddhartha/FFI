@@ -54,10 +54,14 @@ export const useStore = create(
         quotes: state.quotes.map(q => q.id === id ? { ...q, ...updates } : q),
       })),
 
-      // Delete quote
+      // Delete quote — also adds to deletedIds tombstone so sync never re-adds it
       deleteQuote: (id) => set(state => ({
         quotes: state.quotes.filter(q => q.id !== id),
+        deletedIds: [...(state.deletedIds || []), id],
       })),
+
+      // Tombstone: IDs of permanently deleted quotes
+      deletedIds: [],
 
       // Push local quotes directly to cloud (used after deletion to avoid merge re-adding deleted quote)
       pushQuotesToCloud: async () => {
@@ -176,7 +180,10 @@ export const useStore = create(
           const quoteMap = new Map();
           quotes.forEach(q => quoteMap.set(q.id, q));
 
+          const deletedIds = get().deletedIds || [];
           remoteQuotes.forEach(rq => {
+            // Skip any quote that has been tombstoned (deleted) locally
+            if (deletedIds.includes(rq.id)) return;
             const lq = quoteMap.get(rq.id);
             if (!lq) {
               quoteMap.set(rq.id, rq);
@@ -234,6 +241,7 @@ export const useStore = create(
         isOnboarded: state.isOnboarded,
         business: state.business,
         quotes: state.quotes,
+        deletedIds: state.deletedIds,
         events: state.events,
         syncCode: state.syncCode,
         lastSynced: state.lastSynced,
