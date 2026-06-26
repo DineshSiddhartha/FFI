@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { STATE_SUBSIDIES } from '../utils/calculator';
+import { STATE_SUBSIDIES, formatINRFull } from '../utils/calculator';
+import * as XLSX from 'xlsx';
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
@@ -54,6 +55,62 @@ export default function SettingsScreen() {
     a.download = `SuryaQuote_analytics_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // Export quotes as Excel
+  function handleExportExcel() {
+    if (quotes.length === 0) {
+      alert('No quotes to export yet. Create your first quote!');
+      return;
+    }
+
+    const rows = quotes.map((q, i) => ({
+      'S.No': i + 1,
+      'Quote No': q.quoteNo || '-',
+      'Date': q.date || new Date(q.createdAt).toLocaleDateString('en-IN'),
+      'Salesperson': q.salesPersonName || '-',
+      'Customer Name': q.customerName || '-',
+      'Customer Phone': q.customerPhone || '-',
+      'Location': q.customerLocation || '-',
+      'State': q.customerState || '-',
+      'Project Type': q.projectType === 'residential' ? 'Residential' : 'Commercial',
+      'Gated Community': q.isGatedCommunity ? 'Yes' : 'No',
+      'System (kW)': q.systemKw || 0,
+      'No. of Panels': q.calc?.numPanels || '-',
+      'Panel Rate (₹/kW)': q.panelRatePerKw || q.calc?.panelRatePerKw || '-',
+      'Panel Cost (₹)': q.calc?.panelCost || 0,
+      'Inverter Cost (₹)': q.calc?.inverterCost || 0,
+      'Structure Cost (₹)': q.calc?.structureCost || 0,
+      'BOS Cost (₹)': q.calc?.bosCost || 0,
+      'Civil Cost (₹)': q.calc?.civilCost || 0,
+      'Safety Cost (₹)': q.calc?.safetyCost || 0,
+      'I&C Cost (₹)': q.calc?.icCost || 0,
+      'Total (Ex-GST) (₹)': q.calc?.totalExGST || 0,
+      'GST (₹)': q.calc?.gstAmount || 0,
+      'Grand Total (₹)': q.calc?.grandTotal || 0,
+      'Central Subsidy (₹)': q.calc?.centralSubsidy || 0,
+      'Gated Discount (₹)': q.calc?.gatedCommunityDiscount || 0,
+      'Net Cost (₹)': q.calc?.netCost || 0,
+      'Monthly Gen (kWh)': q.calc ? `${q.calc.monthlyGen_low}-${q.calc.monthlyGen_high}` : '-',
+      'Annual Savings (₹)': q.calc ? `${q.calc.annualSavings_low}-${q.calc.annualSavings_high}` : '-',
+      'Payback (years)': q.calc ? `${q.calc.payback_low.toFixed(1)}-${q.calc.payback_high.toFixed(1)}` : '-',
+      'Status': (q.status || 'draft').charAt(0).toUpperCase() + (q.status || 'draft').slice(1),
+      'Valid Until': q.validUntil || '-',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Auto-size columns
+    const colWidths = Object.keys(rows[0]).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String(r[key]).length)) + 2,
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Quotes');
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `SuryaQuote_AllQuotes_${dateStr}.xlsx`);
   }
 
   function upd(field) {
@@ -273,6 +330,9 @@ export default function SettingsScreen() {
               <span className="text-sm font-bold text-green">{quotes.filter(q => q.status === 'won').length}</span>
             </div>
           </div>
+          <button id="export-excel-btn" className="btn btn--primary btn--full mb-sm" onClick={handleExportExcel}>
+            📊 Download All Quotes (Excel)
+          </button>
           <button id="export-csv-btn" className="btn btn--secondary btn--full" onClick={handleExportCSV}>
             📥 Export Usage Log (CSV)
           </button>
